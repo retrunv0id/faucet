@@ -1,35 +1,42 @@
 import express from "express";
+import { SigningStargateClient, coins } from '@cosmjs/stargate';
+
+import log from "ololog";
+
+const retry = require('retry');
+const delay = require('delay');
+
 const router = express.Router();
 
 import { latestTransactionSince } from "../database";
 import * as faucet from "../faucet";
 import path from "path";
-import client from "prom-client";
+import promClient from "prom-client";
 
-const counterPreflight = new client.Counter({
+const counterPreflight = new promClient.Counter({
   name: "faucet_preflight_count",
   help: "faucet_preflight_count is the number of times the faucet served the preflight page",
 });
 
 const INLINE_UI = process.env.INLINE_UI;
+const NETWORK_RPC_NODE = process.env.NETWORK_RPC_NODE;
 
 /* GET home page. */
 router.get("/", async (req: any, res: any, next: any) => {
   let unlockDate;
-  
+
   const wallet = await faucet.getWallet();
-  
-  let chainId;
-  try {
-    chainId = await faucet.getChainId();
-  } catch (error) {
-    console.log('ERROR: faucet.getChainId()', error)
-  }
+  const [{ address }] = await wallet.getAccounts();
+
+  const client = await SigningStargateClient.connectWithSigner(
+    NETWORK_RPC_NODE as any,
+    wallet
+  );
+
+  const chainId = await client.getChainId();
 
   const distributionAmount = faucet.getDistributionAmount();
   const distributionDenom = faucet.getDenom();
-  
-  const [{ address }] = await wallet.getAccounts();
   
   if (req.user && req.user.id) {
     let coolDownDate = new Date(

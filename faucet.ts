@@ -1,9 +1,15 @@
 import 'dotenv/config';
-
+import log from "ololog";
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
 import { SigningStargateClient, coins } from '@cosmjs/stargate';
 import parse from 'parse-duration';
-import client from "prom-client";
+import promClient from "prom-client";
+import axios from "axios";
+
+const retry = require('retry');
+const delay = require('delay');
+const dns = require('dns');
+
 
 const NETWORK_RPC_NODE = process.env.NETWORK_RPC_NODE;
 const FAUCET_MNEMONIC = process.env.FAUCET_MNEMONIC;
@@ -15,15 +21,15 @@ const FAUCET_FEES = process.env.FAUCET_FEES || 5000;
 const FAUCET_GAS = process.env.FAUCET_GAS || 180000;
 const FAUCET_MEMO = process.env.FAUCET_MEMO;
 
-const counterGetChainIdCount = new client.Counter({
+const counterGetChainIdCount = new promClient.Counter({
   name: "faucet_getChainId_count",
   help: "faucet_getChainId_count is the number of times getChainId is being called",
 });
-const counterGetChainIdCountPost = new client.Counter({
+const counterGetChainIdCountPost = new promClient.Counter({
   name: "faucet_getChainId_post_count",
   help: "faucet_getChainId_post_count is the number of times getChainId is being called",
 });
-const counterGetChainIdCountRes = new client.Counter({
+const counterGetChainIdCountRes = new promClient.Counter({
   name: "faucet_getChainId_res_count",
   help: "faucet_getChainId_res_count is the number of times getChainId is being called",
 });
@@ -46,18 +52,37 @@ export const getDistributionAmount = () => {
   return FAUCET_DISTRIBUTION_AMOUNT;
 };
 
-export const getChainId = async () => {
-  counterGetChainIdCount.inc();
-  const wallet = await getWallet();
-  const chaiIdClient = await SigningStargateClient.connectWithSigner(
-    NETWORK_RPC_NODE as any,
-    wallet
-  );
-  counterGetChainIdCountPost.inc();
-  const res = await chaiIdClient.getChainId();
-  counterGetChainIdCountRes.inc();
-  return res;
-};
+let retries = 0;
+
+function faultTolerantResolve(address: string, cb: Function) {
+  const operation = retry.operation({
+    retries: 5,
+    factor: 3,
+    minTimeout: 1 * 1000,
+    maxTimeout: 10 * 1000,
+    randomize: true,
+  });
+
+  operation.attempt(function() {
+    dns.resolve(address, function(err: Error, addresses: []) {
+      if (operation.retry(err)) {
+        retries++;
+        return;
+      }
+      cb(err ? operation.mainError() : null, addresses);
+    });
+  });
+}
+
+// faultTolerantResolve('iflavio.dev', function(err: Error, addresses: []) {
+//   log.green(err, addresses);
+//   log.green('retry', retries);
+//   return {
+//     err,
+//     addresses,
+//     retries,
+//   }
+// });
 
 export const sendTokens = async (recipient: any, amount: any) => {
   const wallet = await getWallet();

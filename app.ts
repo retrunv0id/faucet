@@ -16,6 +16,7 @@ import { router as blockedAddressesRouter } from "./routes/blocked-addresses";
 const PROM_USER = process.env.PROM_USER;
 const PROM_PASSWORD = process.env.PROM_PASSWORD;
 const DOMAIN = process.env.AUTH0_DOMAIN;
+const AUDIENCE = process.env.AUTH0_AUDIENCE;
 
 async function init() {
   
@@ -26,9 +27,6 @@ async function init() {
   app.register(require("fastify-cors"), {
     origin: false,
   });
-
-  const DOMAIN = process.env.AUTH0_DOMAIN;
-  const AUDIENCE = process.env.AUTH0_AUDIENCE;
 
   async function loadUser(req: any, res: any, next: any) {
     if (req.user) {
