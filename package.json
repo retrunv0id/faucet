@@ -33,6 +33,7 @@
     "parse-duration": "^1.0.0",
     "pg": "^8.7.1",
     "point-of-view": "^5.0.0",
+    "promise-retry": "^2.0.1",
     "retry": "^0.13.1",
     "sequelize": "^6.6.5",
     "ts-node": "^10.2.1",

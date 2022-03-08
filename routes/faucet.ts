@@ -39,6 +39,8 @@ router.post(
     const { address } = req.body;
 
     try {
+
+      // @fix A1 - Check if this conditional is working correctly. See @fix A2 below
       if (DOMAIN && req.user?.github) {
         const oneQuarter = 7.776e9;
         const dateSince =
@@ -60,6 +62,7 @@ router.post(
           .send(JSON.stringify({ error: "social account not located." }));
       }
 
+      // @fix A2 - Check if this conditional is working correctly. See @fix A1 above
       if (DOMAIN && !req.user?.id) {
         const { body } = await got(`https://${DOMAIN}/userinfo`, {
           headers: { authorization: req.headers.authorization },
@@ -76,7 +79,7 @@ router.post(
         });
         req.user = Object.assign(req.user, user.dataValues);
       }
-
+ 
       if (process.env.POSTGRES_HOST) {
         let transaction = await Transaction.create({
           userId: req.user.id,
@@ -94,7 +97,6 @@ router.post(
           .status(201)
           .send(JSON.stringify({ transactionHash: result.transactionHash }));
       }
-
       counterDrip.inc();
     } catch (error) {
       counterDripError.inc();
