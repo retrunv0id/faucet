@@ -23,7 +23,6 @@ const counterChainId = new promClient.Counter({
   help: "faucet_chainId_count is the number of times client.getChainId() is being called",
 });
 
-
 const INLINE_UI = process.env.INLINE_UI;
 const NETWORK_RPC_NODE = process.env.NETWORK_RPC_NODE;
 
