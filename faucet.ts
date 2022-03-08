@@ -21,19 +21,6 @@ const FAUCET_FEES = process.env.FAUCET_FEES || 5000;
 const FAUCET_GAS = process.env.FAUCET_GAS || 180000;
 const FAUCET_MEMO = process.env.FAUCET_MEMO;
 
-const counterGetChainIdCount = new promClient.Counter({
-  name: "faucet_getChainId_count",
-  help: "faucet_getChainId_count is the number of times getChainId is being called",
-});
-const counterGetChainIdCountPost = new promClient.Counter({
-  name: "faucet_getChainId_post_count",
-  help: "faucet_getChainId_post_count is the number of times getChainId is being called",
-});
-const counterGetChainIdCountRes = new promClient.Counter({
-  name: "faucet_getChainId_res_count",
-  help: "faucet_getChainId_res_count is the number of times getChainId is being called",
-});
-
 export const getWallet = () => {
   return DirectSecp256k1HdWallet.fromMnemonic(FAUCET_MNEMONIC as any, {
     prefix: 'akash',

@@ -18,6 +18,12 @@ const counterPreflight = new promClient.Counter({
   help: "faucet_preflight_count is the number of times the faucet served the preflight page",
 });
 
+const counterChainId = new promClient.Counter({
+  name: "faucet_chainId_count",
+  help: "faucet_chainId_count is the number of times client.getChainId() is being called",
+});
+
+
 const INLINE_UI = process.env.INLINE_UI;
 const NETWORK_RPC_NODE = process.env.NETWORK_RPC_NODE;
 
@@ -34,10 +40,11 @@ router.get("/", async (req: any, res: any, next: any) => {
   );
 
   const chainId = await client.getChainId();
+  counterChainId.inc();
 
   const distributionAmount = faucet.getDistributionAmount();
   const distributionDenom = faucet.getDenom();
-  
+
   if (req.user && req.user.id) {
     let coolDownDate = new Date(
       (new Date() as any) - (faucet.getWaitPeriod() as any)
